@@ -1,4 +1,4 @@
-# auto-investment-infra
+# investment-infra
 
 인프라 전용 저장소. 비즈니스 로직 없음.
 

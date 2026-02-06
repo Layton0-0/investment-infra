@@ -11,17 +11,17 @@ services:
     # (생략)
 
   backend:
-    image: ${REGISTRY:-ghcr.io}/auto-investment-backend:${BACKEND_TAG:-latest}
+    image: ${REGISTRY:-ghcr.io}/investment-backend:${BACKEND_TAG:-latest}
     # 환경변수·포트·의존성 등
 
   prediction-service:
-    image: ${REGISTRY:-ghcr.io}/auto-investment-prediction-service:${PREDICTION_TAG:-latest}
+    image: ${REGISTRY:-ghcr.io}/investment-prediction-service:${PREDICTION_TAG:-latest}
 
   data-collector:
-    image: ${REGISTRY:-ghcr.io}/auto-investment-data-collector:${DATA_COLLECTOR_TAG:-latest}
+    image: ${REGISTRY:-ghcr.io}/investment-data-collector:${DATA_COLLECTOR_TAG:-latest}
 
   frontend:
-    image: ${REGISTRY:-ghcr.io}/auto-investment-frontend:${FRONTEND_TAG:-latest}
+    image: ${REGISTRY:-ghcr.io}/investment-frontend:${FRONTEND_TAG:-latest}
 
 networks:
   investment-network:
