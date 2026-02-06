@@ -1,0 +1,28 @@
+# 운영용. 이미지 tag만 참조. CI에서 빌드·푸시한 이미지 사용.
+version: '3.8'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    # (생략: 로컬과 동일 설정, 볼륨/네트워크만 프로덕션 규격)
+
+  redis:
+    image: redis:7-alpine
+    # (생략)
+
+  backend:
+    image: ${REGISTRY:-ghcr.io}/auto-investment-backend:${BACKEND_TAG:-latest}
+    # 환경변수·포트·의존성 등
+
+  prediction-service:
+    image: ${REGISTRY:-ghcr.io}/auto-investment-prediction-service:${PREDICTION_TAG:-latest}
+
+  data-collector:
+    image: ${REGISTRY:-ghcr.io}/auto-investment-data-collector:${DATA_COLLECTOR_TAG:-latest}
+
+  frontend:
+    image: ${REGISTRY:-ghcr.io}/auto-investment-frontend:${FRONTEND_TAG:-latest}
+
+networks:
+  investment-network:
+    driver: bridge

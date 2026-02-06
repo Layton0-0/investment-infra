@@ -1,0 +1,52 @@
+# 로컬 개발용. DB/Redis + (선택) 서비스 빌드.
+# 서비스 이미지는 각 Repo에서 빌드하거나, 상위 디렉터리에서 build context 지정 가능.
+version: '3.8'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: investment-timescaledb
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-local_pg}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_pg_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-investment_portfolio}
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./docker/timescaledb/init:/docker-entrypoint-initdb.d
+    networks:
+      - investment-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-local_pg} -d ${POSTGRES_DB:-investment_portfolio}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: investment-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - investment-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  timescaledb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  investment-network:
+    driver: bridge
