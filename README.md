@@ -24,9 +24,18 @@
 로컬에서는 상위 workspace에서 다른 repo와 함께 clone 후 통합 실행:
 
 ```bash
-# 예: docker-compose.local.yml로 DB/Redis만 기동
-docker-compose -f docker-compose.local.yml up -d
+# DB/Redis + prediction-service(8000) + data-collector(8001) 기동
+docker compose -f docker-compose.local.yml up -d
+
+# 이미지까지 빌드 후 기동
+docker compose -f docker-compose.local.yml up -d --build
 ```
+
+- **timescaledb**: 5432
+- **redis**: 6379
+- **prediction-service**: 8000 (상위 `investment-prediction-service`에서 빌드)
+- **data-collector**: 8001 (상위 `investment-data-collector`에서 빌드)
+- backend, frontend는 로컬 yml에 포함되지 않음 (호스트에서 별도 실행)
 
 ## CI/CD
 

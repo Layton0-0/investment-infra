@@ -41,6 +41,32 @@ services:
       timeout: 3s
       retries: 5
 
+  prediction-service:
+    build:
+      context: ../investment-prediction-service
+      dockerfile: Dockerfile
+    image: investment-prediction-service:local
+    pull_policy: never
+    container_name: investment-prediction-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - investment-network
+
+  data-collector:
+    build:
+      context: ../investment-data-collector
+      dockerfile: Dockerfile
+    image: investment-data-collector:local
+    pull_policy: never
+    container_name: investment-data-collector
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    networks:
+      - investment-network
+
 volumes:
   timescaledb_data:
     driver: local
