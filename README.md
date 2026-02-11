@@ -4,6 +4,7 @@
 
 - **역할**: 전체 서비스 배포·연결·환경 통제 (최상위 컨트롤 레이어)
 - **원칙**: 모든 서비스 이미지는 각 Repo에서 build → registry push. 본 저장소는 **이미지 tag만 참조**.
+- **현재 구성**: OCI 2노드 — **Oracle Osaka**(데이터 계층: TimescaleDB, Redis), **Oracle Korea**(애플리케이션 계층: Backend, prediction-service, data-collector). AWS는 선택 사항. IP·키·계정 등 민감정보는 저장소에 포함하지 않는다.
 
 ## 구조
 
@@ -41,3 +42,4 @@ docker compose -f docker-compose.local.yml up -d --build
 
 - **CI**: 각 서비스 Repo (build, test, image build, registry push)
 - **CD**: 본 Repo에서 docker-compose.prod.yml 이미지 tag 갱신 후 서비스 단위 재기동
+- **멀티 VPS (Oracle Osaka + Oracle Korea, 선택 시 AWS)**: 상세 토폴로지·CI/CD·배포 스크립트·Cursor Remote-SSH/SSH MCP는 [investment-backend/docs/06-deployment/05-multi-vps-oracle-aws-cicd.md](../investment-backend/docs/06-deployment/05-multi-vps-oracle-aws-cicd.md) 참조.

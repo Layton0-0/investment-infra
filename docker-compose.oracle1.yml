@@ -1,0 +1,51 @@
+# Oracle 1 (데이터 계층): TimescaleDB, Redis
+# 이미지 태그는 고정 권장. CD에서는 애플리케이션 노드만 갱신.
+version: '3.8'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:2.13.0-pg16
+    container_name: investment-timescaledb
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-investment_pg}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-investment_portfolio}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    networks:
+      - investment-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-investment_pg} -d ${POSTGRES_DB:-investment_portfolio}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: investment-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --appendonly yes
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - investment-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  timescaledb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  investment-network:
+    driver: bridge
