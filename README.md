@@ -40,6 +40,6 @@ docker compose -f docker-compose.local.yml up -d --build
 
 ## CI/CD
 
-- **CI**: 각 서비스 Repo (build, test, image build, registry push)
-- **CD**: 본 Repo에서 docker-compose.prod.yml 이미지 tag 갱신 후 서비스 단위 재기동
-- **멀티 VPS (Oracle Osaka + Oracle Korea, 선택 시 AWS)**: 상세 토폴로지·CI/CD·배포 스크립트·Cursor Remote-SSH/SSH MCP는 [investment-backend/docs/06-deployment/05-multi-vps-oracle-aws-cicd.md](../investment-backend/docs/06-deployment/05-multi-vps-oracle-aws-cicd.md) 참조.
+- **CI**: 각 서비스 Repo (build, test, image build, registry push). 각 레포 `.github/workflows/ci.yml` 참조.
+- **CD**: 본 Repo `.github/workflows/cd.yml` — workflow_dispatch 또는 push to main 시 Oracle 1(Osaka), Oracle 2(Korea), Oracle 3(Mumbai), (선택) AWS 노드에 SSH 배포. 시크릿·저장소 변수는 [07-cicd-implementation-checklist.md](../investment-backend/docs/06-deployment/07-cicd-implementation-checklist.md) 참조.
+- **멀티 VPS (Oracle Osaka + Oracle Korea + Oracle 3 Mumbai, 선택 시 AWS)**: 상세 토폴로지·CI/CD·배포 스크립트·Cursor Remote-SSH/SSH MCP는 [investment-backend/docs/06-deployment/05-multi-vps-oracle-aws-cicd.md](../investment-backend/docs/06-deployment/05-multi-vps-oracle-aws-cicd.md) 참조.

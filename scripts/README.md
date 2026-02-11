@@ -2,20 +2,22 @@
 
 배포·롤백 스크립트. **GitHub Actions CD 단계**에서 SSH로 각 노드에 접속해 실행하거나, 로컬에서 SSH로 원격 실행하는 용도이다.
 
-## 멀티 VPS (Oracle Osaka + Oracle Korea, 선택 시 AWS)
+## 멀티 VPS (Oracle Osaka + Oracle Korea + Oracle 3 Mumbai, 선택 시 AWS)
 
-노드별 전용 스크립트와 Compose 파일. Oracle 1 = 데이터 계층(예: Oracle Osaka), Oracle 2 = 앱 계층(예: Oracle Korea)에 대응한다.
+노드별 전용 스크립트와 Compose 파일. Oracle 1 = 데이터 계층(Osaka), Oracle 2 = 앱 계층(Korea), Oracle 3 = 앱 계층(India West Mumbai).
 
 | 스크립트 | 대상 노드(예) | Compose 파일 | 서비스 |
 |----------|---------------|--------------|--------|
 | `deploy-oracle1.sh` | Oracle Osaka (데이터) | `docker-compose.oracle1.yml` | timescaledb, redis |
 | `deploy-oracle2.sh` | Oracle Korea (앱) | `docker-compose.oracle2.yml` | backend, prediction-service, data-collector |
+| `deploy-oracle3-mumbai.sh` | India West (Mumbai, Oracle 3) | `docker-compose.oracle2.yml` | backend, prediction-service, data-collector (동일) |
+| `setup-oracle3-mumbai.sh` | Mumbai 최초 1회 | — | Docker·Compose 설치, investment-infra 경로·.env 안내 |
 | `deploy-aws.sh` | AWS (엣지, 선택) | `docker-compose.aws.yml` | frontend, nginx |
 
 ### 사용 방법
 
 1. **해당 노드에 investment-infra 클론 또는 스크립트/yml 복사**
-2. **환경 변수**: Oracle 2 / AWS 노드는 `BACKEND_TAG`, `PREDICTION_TAG`, `DATA_COLLECTOR_TAG`, `FRONTEND_TAG` 등을 `.env`에 두거나 export 후 실행
+2. **환경 변수**: Oracle 2 / Oracle 3 (Mumbai) 노드는 `BACKEND_TAG`, `PREDICTION_TAG`, `DATA_COLLECTOR_TAG`, `SPRING_DATASOURCE_URL`, `REDIS_HOST`(Oracle 1 Public IP) 등을 `.env`에 두거나 export 후 실행. AWS는 `FRONTEND_TAG` 등.
 3. **태그 설정 헬퍼**: `set-env-tags.sh` — 인자 또는 환경 변수로 태그를 받아 `.env`에 쓴다. CI에서 `GITHUB_SHA` 전달 후 원격 노드에 `.env` 복사하고 `deploy-*.sh` 실행 시 참조
 
 ```bash

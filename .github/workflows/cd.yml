@@ -1,0 +1,75 @@
+# CD: deploy to Oracle 1 (Osaka), Oracle 2 (Korea), Oracle 3 (Mumbai), and optionally AWS.
+# SECURITY: Do NOT commit SSH private keys to the repo. Register them only in:
+#   Settings → Secrets and variables → Actions → Secrets
+# (SSH_PRIVATE_KEY_ORACLE_OSAKA, SSH_PRIVATE_KEY_ORACLE_KOREA, SSH_PRIVATE_KEY_ORACLE_MUMBAI, SSH_PRIVATE_KEY_AWS).
+# Set Variables (not the key content): DEPLOY_HOST_ORACLE_OSAKA, DEPLOY_HOST_ORACLE_KOREA, DEPLOY_HOST_ORACLE_MUMBAI, DEPLOY_USER, DEPLOY_HOST_AWS.
+name: CD
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag (e.g. sha-abc1234 or latest)'
+        required: false
+        default: 'latest'
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
+      DEPLOY_USER: ${{ vars.DEPLOY_USER || 'ubuntu' }}
+    steps:
+      - name: Deploy Oracle 1 (Osaka)
+        if: vars.DEPLOY_HOST_ORACLE_OSAKA != ''
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEPLOY_HOST_ORACLE_OSAKA }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_OSAKA }}
+          script: |
+            cd investment-infra || exit 1
+            docker compose -f docker-compose.oracle1.yml pull
+            docker compose -f docker-compose.oracle1.yml up -d
+
+      - name: Deploy Oracle 2 (Korea)
+        if: vars.DEPLOY_HOST_ORACLE_KOREA != ''
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEPLOY_HOST_ORACLE_KOREA }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_KOREA }}
+          script: |
+            cd investment-infra || exit 1
+            export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
+            ./scripts/set-env-tags.sh
+            ./scripts/deploy-oracle2.sh
+
+      - name: Deploy Oracle 3 (Mumbai)
+        if: vars.DEPLOY_HOST_ORACLE_MUMBAI != ''
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEPLOY_HOST_ORACLE_MUMBAI }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
+          script: |
+            cd investment-infra || exit 1
+            export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
+            ./scripts/set-env-tags.sh
+            ./scripts/deploy-oracle3-mumbai.sh
+
+      - name: Deploy AWS (optional)
+        if: vars.DEPLOY_HOST_AWS != ''
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEPLOY_HOST_AWS }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_AWS }}
+          script: |
+            cd investment-infra || exit 1
+            export FRONTEND_TAG="${{ env.IMAGE_TAG }}"
+            ./scripts/set-env-tags.sh
+            ./scripts/deploy-aws.sh
