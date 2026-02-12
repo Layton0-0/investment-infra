@@ -37,6 +37,7 @@ jobs:
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
+            chmod +x scripts/*.sh
             ./scripts/deploy-oracle1.sh
 
       - name: Deploy Oracle 2 (Korea)
@@ -49,6 +50,7 @@ jobs:
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
+            chmod +x scripts/*.sh
             export REGISTRY="ghcr.io/${{ github.repository_owner }}"
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
@@ -64,6 +66,7 @@ jobs:
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
+            chmod +x scripts/*.sh
             export REGISTRY="ghcr.io/${{ github.repository_owner }}"
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
@@ -79,6 +82,7 @@ jobs:
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
+            chmod +x scripts/*.sh
             export REGISTRY="ghcr.io/${{ github.repository_owner }}"
             export FRONTEND_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
