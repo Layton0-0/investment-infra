@@ -1,8 +1,6 @@
 # AWS (엣지 계층): Nginx, Frontend
-# FRONTEND_TAG, REGISTRY 환경 변수로 이미지 태그 주입.
+# FRONTEND_TAG, REGISTRY 환경 변수로 이미지 태그 주입. REGISTRY는 ghcr.io/OWNER 형식.
 # Nginx는 Backend(Oracle 2)로 /api 프록시 설정 필요 (nginx/conf.d 또는 nginx.conf).
-version: '3.8'
-
 services:
   frontend:
     image: ${REGISTRY:-ghcr.io}/investment-frontend:${FRONTEND_TAG:-latest}

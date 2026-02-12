@@ -11,6 +11,7 @@ ENV_FILE="${INFRA_DIR}/.env"
 cd "${INFRA_DIR}"
 
 # 인자 또는 환경 변수로 태그 받기 (CI에서 GITHUB_SHA 등 전달)
+# REGISTRY: ghcr.io/OWNER 형식 필요. CD 워크플로우에서 export REGISTRY="ghcr.io/${{ github.repository_owner }}" 로 설정.
 BACKEND_TAG="${BACKEND_TAG:-${1:-latest}}"
 PREDICTION_TAG="${PREDICTION_TAG:-${2:-$BACKEND_TAG}}"
 DATA_COLLECTOR_TAG="${DATA_COLLECTOR_TAG:-${3:-$BACKEND_TAG}}"

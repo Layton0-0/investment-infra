@@ -1,6 +1,4 @@
-# 운영용. 이미지 tag만 참조. CI에서 빌드·푸시한 이미지 사용.
-version: '3.8'
-
+# 운영용. 이미지 tag만 참조. CI에서 빌드·푸시한 이미지 사용. REGISTRY는 ghcr.io/OWNER 형식.
 services:
   timescaledb:
     image: timescale/timescaledb:latest-pg16

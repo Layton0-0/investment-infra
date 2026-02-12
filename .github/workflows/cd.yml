@@ -36,8 +36,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_OSAKA }}
           script: |
             cd investment-infra || exit 1
-            docker compose -f docker-compose.oracle1.yml pull
-            docker compose -f docker-compose.oracle1.yml up -d
+            git fetch origin && git reset --hard origin/main
+            ./scripts/deploy-oracle1.sh
 
       - name: Deploy Oracle 2 (Korea)
         if: vars.DEPLOY_HOST_ORACLE_KOREA != ''
@@ -48,6 +48,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_KOREA }}
           script: |
             cd investment-infra || exit 1
+            git fetch origin && git reset --hard origin/main
+            export REGISTRY="ghcr.io/${{ github.repository_owner }}"
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-oracle2.sh
@@ -61,6 +63,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
           script: |
             cd investment-infra || exit 1
+            git fetch origin && git reset --hard origin/main
+            export REGISTRY="ghcr.io/${{ github.repository_owner }}"
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-oracle3-mumbai.sh
@@ -74,6 +78,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY_AWS }}
           script: |
             cd investment-infra || exit 1
+            git fetch origin && git reset --hard origin/main
+            export REGISTRY="ghcr.io/${{ github.repository_owner }}"
             export FRONTEND_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-aws.sh

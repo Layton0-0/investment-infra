@@ -1,7 +1,7 @@
 # Oracle 2 (애플리케이션 계층): Backend, prediction-service, data-collector
 # BACKEND_TAG, PREDICTION_TAG, DATA_COLLECTOR_TAG, REGISTRY 환경 변수로 이미지 태그 주입.
-version: '3.8'
-
+# REGISTRY는 ghcr.io/OWNER 형식 (예: ghcr.io/Layton0-0). CI는 ghcr.io/${{ github.repository_owner }}/이미지명 으로 푸시.
+# DB/Redis 비밀번호·URL 등은 .env에서만 설정. .env는 저장소에 커밋하지 않음.
 services:
   backend:
     image: ${REGISTRY:-ghcr.io}/investment-backend:${BACKEND_TAG:-latest}
@@ -11,10 +11,10 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      # DB/Redis는 Oracle 1 Private IP 등으로 설정
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:?set SPRING_DATASOURCE_URL}
+      # DB/Redis는 Oracle 1 Private IP 등으로 설정 (동일 DB이므로 POSTGRES_PASSWORD는 Oracle 1과 같게)
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:?set SPRING_DATASOURCE_URL in .env}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-investment_pg}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       SPRING_DATA_REDIS_HOST: ${REDIS_HOST:-oracle1-private-ip}
       SPRING_DATA_REDIS_PORT: ${REDIS_PORT:-6379}
     networks:
