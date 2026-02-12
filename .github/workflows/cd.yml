@@ -3,7 +3,11 @@
 #   Settings → Secrets and variables → Actions → Secrets
 # (SSH_PRIVATE_KEY_ORACLE_OSAKA, SSH_PRIVATE_KEY_ORACLE_KOREA, SSH_PRIVATE_KEY_ORACLE_MUMBAI, SSH_PRIVATE_KEY_AWS).
 # Set Variables (not the key content): DEPLOY_HOST_ORACLE_OSAKA, DEPLOY_HOST_ORACLE_KOREA, DEPLOY_HOST_ORACLE_MUMBAI, DEPLOY_USER, DEPLOY_HOST_AWS.
+# Image tag policy: workflow_dispatch uses input image_tag (default 'latest'). On push to main, IMAGE_TAG defaults to 'latest';
+#   for a specific commit use workflow_dispatch and pass e.g. sha-<7자리> to align with CI-pushed images.
+# run-name: Avoid showing commit message (e.g. Korean) in Actions list to prevent encoding garbling.
 name: CD
+run-name: CD - Deploy Oracle 1/2/3 (${{ github.event.inputs.image_tag || 'latest' }})
 on:
   workflow_dispatch:
     inputs:
@@ -73,3 +77,23 @@ jobs:
             export FRONTEND_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-aws.sh
+
+      - name: Verify Oracle 2 (Backend health)
+        if: vars.DEPLOY_HOST_ORACLE_KOREA != ''
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEPLOY_HOST_ORACLE_KOREA }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_KOREA }}
+          script: |
+            curl -sf http://localhost:8080/actuator/health || (echo "Backend health check failed" && exit 1)
+
+      - name: Verify Oracle 3 (Mumbai, Backend health)
+        if: vars.DEPLOY_HOST_ORACLE_MUMBAI != ''
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEPLOY_HOST_ORACLE_MUMBAI }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
+          script: |
+            curl -sf http://localhost:8080/actuator/health || (echo "Backend health check failed" && exit 1)
