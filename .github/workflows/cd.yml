@@ -41,6 +41,7 @@ jobs:
           host: ${{ vars.DEPLOY_HOST_ORACLE_OSAKA }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_OSAKA }}
+          command_timeout: 5m
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
@@ -57,6 +58,7 @@ jobs:
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_KOREA }}
           envs: GHCR_PULL_TOKEN
+          command_timeout: 5m
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
@@ -78,6 +80,7 @@ jobs:
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
           envs: GHCR_PULL_TOKEN
+          command_timeout: 5m
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
@@ -99,6 +102,7 @@ jobs:
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_AWS }}
           envs: GHCR_PULL_TOKEN
+          command_timeout: 5m
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
@@ -117,13 +121,14 @@ jobs:
           host: ${{ vars.DEPLOY_HOST_ORACLE_KOREA }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_KOREA }}
+          command_timeout: 3m
           script: |
-            echo "Waiting for Backend to be ready (up to 90s)..."
-            for i in $(seq 1 9); do
+            echo "Waiting for Backend to be ready (up to 120s)..."
+            for i in $(seq 1 12); do
               if curl -sf http://localhost:8080/actuator/health; then echo "Backend healthy."; exit 0; fi
               sleep 10
             done
-            echo "Backend health check failed after 90s"
+            echo "Backend health check failed after 120s. On the node run: docker compose -f docker-compose.oracle2.yml ps; docker compose -f docker-compose.oracle2.yml logs backend --tail 50"
             exit 1
 
       - name: Verify Oracle 3 (Mumbai, Backend health)
@@ -133,11 +138,12 @@ jobs:
           host: ${{ vars.DEPLOY_HOST_ORACLE_MUMBAI }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
+          command_timeout: 3m
           script: |
-            echo "Waiting for Backend to be ready (up to 90s)..."
-            for i in $(seq 1 9); do
+            echo "Waiting for Backend to be ready (up to 120s)..."
+            for i in $(seq 1 12); do
               if curl -sf http://localhost:8080/actuator/health; then echo "Backend healthy."; exit 0; fi
               sleep 10
             done
-            echo "Backend health check failed after 90s"
+            echo "Backend health check failed after 120s. On the node run: docker compose -f docker-compose.oracle2.yml ps; docker compose -f docker-compose.oracle2.yml logs backend --tail 50"
             exit 1
