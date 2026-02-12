@@ -2,6 +2,7 @@
 # SECURITY: Do NOT commit SSH private keys to the repo. Register them only in:
 #   Settings → Secrets and variables → Actions → Secrets
 # (SSH_PRIVATE_KEY_ORACLE_OSAKA, SSH_PRIVATE_KEY_ORACLE_KOREA, SSH_PRIVATE_KEY_ORACLE_MUMBAI, SSH_PRIVATE_KEY_AWS).
+# For private GHCR images: add secret GHCR_PULL_TOKEN (GitHub PAT with read:packages) so deploy nodes can docker pull.
 # Set Variables (not the key content): DEPLOY_HOST_ORACLE_OSAKA, DEPLOY_HOST_ORACLE_KOREA, DEPLOY_HOST_ORACLE_MUMBAI, DEPLOY_USER, DEPLOY_HOST_AWS.
 # Image tag policy: workflow_dispatch uses input image_tag (default 'latest'). On push to main, IMAGE_TAG defaults to 'latest';
 #   for a specific commit use workflow_dispatch and pass e.g. sha-<7자리> to align with CI-pushed images.
@@ -47,11 +48,14 @@ jobs:
           host: ${{ vars.DEPLOY_HOST_ORACLE_KOREA }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_KOREA }}
+          envs: GHCR_PULL_TOKEN=${{ secrets.GHCR_PULL_TOKEN }}
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
-            export REGISTRY="ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+            export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+            export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
+            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; fi
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-oracle2.sh
@@ -63,11 +67,14 @@ jobs:
           host: ${{ vars.DEPLOY_HOST_ORACLE_MUMBAI }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
+          envs: GHCR_PULL_TOKEN=${{ secrets.GHCR_PULL_TOKEN }}
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
-            export REGISTRY="ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+            export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+            export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
+            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; fi
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-oracle3-mumbai.sh
@@ -79,11 +86,14 @@ jobs:
           host: ${{ vars.DEPLOY_HOST_AWS }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_AWS }}
+          envs: GHCR_PULL_TOKEN=${{ secrets.GHCR_PULL_TOKEN }}
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
-            export REGISTRY="ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+            export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+            export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
+            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; fi
             export FRONTEND_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-aws.sh
