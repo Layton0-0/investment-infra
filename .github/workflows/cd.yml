@@ -2,7 +2,7 @@
 # SECURITY: Do NOT commit SSH private keys to the repo. Register them only in:
 #   Settings → Secrets and variables → Actions → Secrets
 # (SSH_PRIVATE_KEY_ORACLE_OSAKA, SSH_PRIVATE_KEY_ORACLE_KOREA, SSH_PRIVATE_KEY_ORACLE_MUMBAI, SSH_PRIVATE_KEY_AWS).
-# For private GHCR images: add secret GHCR_PULL_TOKEN (GitHub PAT with read:packages) so deploy nodes can docker pull.
+# For private GHCR images: add secret GHCR_PULL_TOKEN (Classic PAT with read:packages). If login fails with "denied", fix the token or set package visibility to public (each repo → Packages → package → Package settings).
 # Set Variables (not the key content): DEPLOY_HOST_ORACLE_OSAKA, DEPLOY_HOST_ORACLE_KOREA, DEPLOY_HOST_ORACLE_MUMBAI, DEPLOY_USER, DEPLOY_HOST_AWS.
 # Image tag policy: workflow_dispatch uses input image_tag (default 'latest'). On push to main, IMAGE_TAG defaults to 'latest';
 #   for a specific commit use workflow_dispatch and pass e.g. sha-<7자리> to align with CI-pushed images.
@@ -65,7 +65,14 @@ jobs:
             chmod +x scripts/*.sh
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
-            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; else echo "GHCR_PULL_TOKEN not set: skipping docker login (add secret if images are private)"; fi
+            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
+              if ! echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; then
+                echo "ERROR: docker login to ghcr.io failed. Check Actions secret GHCR_PULL_TOKEN: Classic PAT with read:packages, or make container images public."
+                exit 1
+              fi
+            else
+              echo "GHCR_PULL_TOKEN not set: trying pull (works if images are public)."
+            fi
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-oracle2.sh
@@ -87,7 +94,14 @@ jobs:
             chmod +x scripts/*.sh
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
-            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; else echo "GHCR_PULL_TOKEN not set: skipping docker login (add secret if images are private)"; fi
+            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
+              if ! echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; then
+                echo "ERROR: docker login to ghcr.io failed. Check Actions secret GHCR_PULL_TOKEN: Classic PAT with read:packages, or make container images public."
+                exit 1
+              fi
+            else
+              echo "GHCR_PULL_TOKEN not set: trying pull (works if images are public)."
+            fi
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-oracle3-mumbai.sh
@@ -109,7 +123,14 @@ jobs:
             chmod +x scripts/*.sh
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
-            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; else echo "GHCR_PULL_TOKEN not set: skipping docker login (add secret if images are private)"; fi
+            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
+              if ! echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; then
+                echo "ERROR: docker login to ghcr.io failed. Check Actions secret GHCR_PULL_TOKEN: Classic PAT with read:packages, or make container images public."
+                exit 1
+              fi
+            else
+              echo "GHCR_PULL_TOKEN not set: trying pull (works if images are public)."
+            fi
             export FRONTEND_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-aws.sh
