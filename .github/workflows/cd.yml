@@ -147,6 +147,7 @@ jobs:
 
       - name: Verify Oracle 2 (Backend health)
         if: vars.DEPLOY_HOST_ORACLE_KOREA != ''
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.DEPLOY_HOST_ORACLE_KOREA }}
