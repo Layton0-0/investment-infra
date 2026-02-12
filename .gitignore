@@ -3,6 +3,7 @@ secrets/
 !.env.example
 .env.*
 !.env.example.*
+scripts/env-oracle3-mumbai.txt
 
 # IDE
 .idea/

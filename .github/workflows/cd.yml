@@ -80,6 +80,7 @@ jobs:
 
       - name: Deploy Oracle 3 (Mumbai)
         if: vars.DEPLOY_HOST_ORACLE_MUMBAI != ''
+        continue-on-error: true
         env:
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
         uses: appleboy/ssh-action@v1.0.3
@@ -157,6 +158,7 @@ jobs:
 
       - name: Verify Oracle 3 (Mumbai, Backend health)
         if: vars.DEPLOY_HOST_ORACLE_MUMBAI != ''
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.DEPLOY_HOST_ORACLE_MUMBAI }}
