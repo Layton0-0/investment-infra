@@ -1,4 +1,5 @@
 # CD: deploy to Oracle 1 (Osaka), Oracle 2 (Korea), Oracle 3 (Mumbai), and optionally AWS.
+# Oracle 3 (Mumbai): Deploy and Verify failure fail the workflow (no continue-on-error).
 # SECURITY: Do NOT commit SSH private keys to the repo. Register them only in:
 #   Settings → Secrets and variables → Actions → Secrets
 # (SSH_PRIVATE_KEY_ORACLE_OSAKA, SSH_PRIVATE_KEY_ORACLE_KOREA, SSH_PRIVATE_KEY_ORACLE_MUMBAI, SSH_PRIVATE_KEY_AWS).
@@ -43,7 +44,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_OSAKA }}
           command_timeout: 5m
           script: |
-            cd investment-infra || exit 1
+            set -e
+            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
             ./scripts/deploy-oracle1.sh
@@ -60,7 +62,8 @@ jobs:
           envs: GHCR_PULL_TOKEN
           command_timeout: 15m
           script: |
-            cd investment-infra || exit 1
+            set -e
+            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
@@ -90,8 +93,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
           envs: GHCR_PULL_TOKEN
           command_timeout: 15m
+          timeout: 120s
           script: |
-            cd investment-infra || exit 1
+            set -e
+            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
@@ -121,7 +126,8 @@ jobs:
           envs: GHCR_PULL_TOKEN
           command_timeout: 5m
           script: |
-            cd investment-infra || exit 1
+            set -e
+            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
@@ -146,14 +152,15 @@ jobs:
           host: ${{ vars.DEPLOY_HOST_ORACLE_KOREA }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_KOREA }}
-          command_timeout: 3m
+          command_timeout: 5m
           script: |
-            echo "Waiting for Backend to be ready (up to 120s)..."
-            for i in $(seq 1 12); do
+            set -e
+            echo "Waiting for Backend to be ready (up to 240s)..."
+            for i in $(seq 1 24); do
               if curl -sf http://localhost:8080/actuator/health; then echo "Backend healthy."; exit 0; fi
               sleep 10
             done
-            echo "Backend health check failed after 120s. On the node run: docker compose -f docker-compose.oracle2.yml ps; docker compose -f docker-compose.oracle2.yml logs backend --tail 50"
+            echo "Backend health check failed after 240s. On the node run: docker compose -f docker-compose.oracle2.yml ps; docker compose -f docker-compose.oracle2.yml logs backend --tail 50"
             exit 1
 
       - name: Verify Oracle 3 (Mumbai, Backend health)
@@ -164,12 +171,14 @@ jobs:
           host: ${{ vars.DEPLOY_HOST_ORACLE_MUMBAI }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
-          command_timeout: 3m
+          command_timeout: 5m
+          timeout: 120s
           script: |
-            echo "Waiting for Backend to be ready (up to 120s)..."
-            for i in $(seq 1 12); do
+            set -e
+            echo "Waiting for Backend to be ready (up to 240s)..."
+            for i in $(seq 1 24); do
               if curl -sf http://localhost:8080/actuator/health; then echo "Backend healthy."; exit 0; fi
               sleep 10
             done
-            echo "Backend health check failed after 120s. On the node run: docker compose -f docker-compose.oracle2.yml ps; docker compose -f docker-compose.oracle2.yml logs backend --tail 50"
+            echo "Backend health check failed after 240s. On the node run: docker compose -f docker-compose.oracle2.yml ps; docker compose -f docker-compose.oracle2.yml logs backend --tail 50"
             exit 1

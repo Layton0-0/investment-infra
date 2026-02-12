@@ -38,6 +38,19 @@ docker compose -f docker-compose.local.yml up -d --build
 - **data-collector**: 8001 (상위 `investment-data-collector`에서 빌드)
 - backend, frontend는 로컬 yml에 포함되지 않음 (호스트에서 별도 실행)
 
+## 노드별 환경 설정 (.env)
+
+각 노드에서 배포 전 **`.env`** 가 필요하다. 값은 저장소에 커밋하지 않는다.
+
+1. **템플릿 복사**: `cp .env.example .env`
+2. **값 채우기**: 노드 역할에 맞게 아래 최소 변수만 설정해도 된다.
+   - **Oracle 1 (데이터)**: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+   - **Oracle 2 / Oracle 3 (앱)**: `REGISTRY`, `BACKEND_TAG`, `PREDICTION_TAG`, `DATA_COLLECTOR_TAG`, `SPRING_DATASOURCE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `REDIS_HOST`, `REDIS_PORT`
+   - **AWS (엣지)**: `REGISTRY`, `FRONTEND_TAG`
+3. **배포 전 점검**: `./scripts/check-node-ready.sh` — investment-infra 존재·Docker·.env 필수 변수 중 하나라도 설정되었는지 확인.
+
+상세 변수 설명·클론 방법은 [scripts/README.md](scripts/README.md) 참조.
+
 ## CI/CD
 
 - **CI**: 각 서비스 Repo (build, test, image build, registry push). 각 레포 `.github/workflows/ci.yml` 참조.

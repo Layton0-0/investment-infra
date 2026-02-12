@@ -32,10 +32,17 @@ CD 및 로컬 배포 스크립트는 각 노드의 **`~/investment-infra`** (또
 
 클론 후 `./scripts/check-node-ready.sh` 로 사전 점검 가능.
 
+### .env.example 및 노드별 필수 변수
+
+- **템플릿 위치**: 저장소 루트 `investment-infra/.env.example`. 각 노드에서 `cp .env.example .env` 후 값만 채운다.
+- **Oracle 1**: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+- **Oracle 2 / Oracle 3**: `REGISTRY`, `BACKEND_TAG`, `PREDICTION_TAG`, `DATA_COLLECTOR_TAG`, `SPRING_DATASOURCE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `REDIS_HOST`, `REDIS_PORT`
+- **AWS**: `REGISTRY`, `FRONTEND_TAG`
+
 ### 사용 방법
 
 1. **해당 노드에 investment-infra 클론** (위 참고) **또는 스크립트/yml만 복사**
-2. **환경 변수**: Oracle 2 / Oracle 3 (Mumbai) 노드는 `BACKEND_TAG`, `PREDICTION_TAG`, `DATA_COLLECTOR_TAG`, `SPRING_DATASOURCE_URL`, `REDIS_HOST`(Oracle 1 Public IP) 등을 `.env`에 두거나 export 후 실행. AWS는 `FRONTEND_TAG` 등.
+2. **환경 변수**: 위 노드별 필수 변수를 `.env`에 두거나 export 후 실행. Oracle 2/3는 `SPRING_DATASOURCE_URL`, `REDIS_HOST`에 Oracle 1 Public IP 기반 값 사용.
 3. **태그 설정 헬퍼**: `set-env-tags.sh` — 인자 또는 환경 변수로 태그를 받아 `.env`에 쓴다. CI에서 `GITHUB_SHA` 전달 후 원격 노드에 `.env` 복사하고 `deploy-*.sh` 실행 시 참조
 
 ```bash

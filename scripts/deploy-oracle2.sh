@@ -16,6 +16,20 @@ if [[ -f .env ]]; then
   set +a
 fi
 
+# Required for backend: fail fast with clear message if missing (CD runs on app nodes)
+if [[ -z "${SPRING_DATASOURCE_URL:-}" ]]; then
+  echo "ERROR: SPRING_DATASOURCE_URL is not set. Add it to .env (e.g. jdbc:postgresql://<Oracle1-Public-IP>:5432/<DB>)." >&2
+  exit 1
+fi
+if [[ -z "${POSTGRES_PASSWORD:-}" ]]; then
+  echo "ERROR: POSTGRES_PASSWORD is not set in .env (must match Oracle 1)." >&2
+  exit 1
+fi
+if [[ -z "${REDIS_HOST:-}" ]]; then
+  echo "ERROR: REDIS_HOST is not set in .env (use Oracle 1 Public IP)." >&2
+  exit 1
+fi
+
 if [[ ! -f "${COMPOSE_FILE}" ]]; then
   echo "ERROR: ${COMPOSE_FILE} not found. Create it or set COMPOSE_FILE." >&2
   exit 1
