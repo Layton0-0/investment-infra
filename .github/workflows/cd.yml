@@ -43,57 +43,63 @@ jobs:
 
       - name: Deploy Oracle 2 (Korea)
         if: vars.DEPLOY_HOST_ORACLE_KOREA != ''
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.DEPLOY_HOST_ORACLE_KOREA }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_KOREA }}
-          envs: GHCR_PULL_TOKEN=${{ secrets.GHCR_PULL_TOKEN }}
+          envs: GHCR_PULL_TOKEN
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
-            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; fi
+            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; else echo "GHCR_PULL_TOKEN not set: skipping docker login (add secret if images are private)"; fi
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-oracle2.sh
 
       - name: Deploy Oracle 3 (Mumbai)
         if: vars.DEPLOY_HOST_ORACLE_MUMBAI != ''
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.DEPLOY_HOST_ORACLE_MUMBAI }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
-          envs: GHCR_PULL_TOKEN=${{ secrets.GHCR_PULL_TOKEN }}
+          envs: GHCR_PULL_TOKEN
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
-            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; fi
+            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; else echo "GHCR_PULL_TOKEN not set: skipping docker login (add secret if images are private)"; fi
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-oracle3-mumbai.sh
 
       - name: Deploy AWS (optional)
         if: vars.DEPLOY_HOST_AWS != ''
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.DEPLOY_HOST_AWS }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_AWS }}
-          envs: GHCR_PULL_TOKEN=${{ secrets.GHCR_PULL_TOKEN }}
+          envs: GHCR_PULL_TOKEN
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
-            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; fi
+            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; else echo "GHCR_PULL_TOKEN not set: skipping docker login (add secret if images are private)"; fi
             export FRONTEND_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-aws.sh
