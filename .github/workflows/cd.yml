@@ -51,7 +51,7 @@ jobs:
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
-            export REGISTRY="ghcr.io/${{ github.repository_owner }}"
+            export REGISTRY="ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-oracle2.sh
@@ -67,7 +67,7 @@ jobs:
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
-            export REGISTRY="ghcr.io/${{ github.repository_owner }}"
+            export REGISTRY="ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-oracle3-mumbai.sh
@@ -83,7 +83,7 @@ jobs:
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
-            export REGISTRY="ghcr.io/${{ github.repository_owner }}"
+            export REGISTRY="ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export FRONTEND_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
             ./scripts/deploy-aws.sh
