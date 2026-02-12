@@ -66,12 +66,13 @@ jobs:
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
             if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
-              if ! echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; then
-                echo "ERROR: docker login to ghcr.io failed. Check Actions secret GHCR_PULL_TOKEN: Classic PAT with read:packages, or make container images public."
-                exit 1
+              if echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin 2>/dev/null; then
+                echo "Logged in to ghcr.io"
+              else
+                echo "WARN: docker login to ghcr.io failed (token invalid or expired). Trying pull anyway (works if package visibility is public)."
               fi
             else
-              echo "GHCR_PULL_TOKEN not set: trying pull (works if images are public)."
+              echo "GHCR_PULL_TOKEN not set: pulling without login (works if images are public)."
             fi
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
@@ -95,12 +96,13 @@ jobs:
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
             if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
-              if ! echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; then
-                echo "ERROR: docker login to ghcr.io failed. Check Actions secret GHCR_PULL_TOKEN: Classic PAT with read:packages, or make container images public."
-                exit 1
+              if echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin 2>/dev/null; then
+                echo "Logged in to ghcr.io"
+              else
+                echo "WARN: docker login to ghcr.io failed (token invalid or expired). Trying pull anyway (works if package visibility is public)."
               fi
             else
-              echo "GHCR_PULL_TOKEN not set: trying pull (works if images are public)."
+              echo "GHCR_PULL_TOKEN not set: pulling without login (works if images are public)."
             fi
             export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
@@ -124,12 +126,13 @@ jobs:
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
             export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
             if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
-              if ! echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin; then
-                echo "ERROR: docker login to ghcr.io failed. Check Actions secret GHCR_PULL_TOKEN: Classic PAT with read:packages, or make container images public."
-                exit 1
+              if echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin 2>/dev/null; then
+                echo "Logged in to ghcr.io"
+              else
+                echo "WARN: docker login to ghcr.io failed (token invalid or expired). Trying pull anyway (works if package visibility is public)."
               fi
             else
-              echo "GHCR_PULL_TOKEN not set: trying pull (works if images are public)."
+              echo "GHCR_PULL_TOKEN not set: pulling without login (works if images are public)."
             fi
             export FRONTEND_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
