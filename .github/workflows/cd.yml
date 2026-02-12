@@ -58,7 +58,7 @@ jobs:
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_KOREA }}
           envs: GHCR_PULL_TOKEN
-          command_timeout: 5m
+          command_timeout: 15m
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
@@ -88,7 +88,7 @@ jobs:
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
           envs: GHCR_PULL_TOKEN
-          command_timeout: 5m
+          command_timeout: 15m
           script: |
             cd investment-infra || exit 1
             git fetch origin && git reset --hard origin/main
