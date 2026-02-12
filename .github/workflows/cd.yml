@@ -7,6 +7,7 @@
 # Image tag policy: workflow_dispatch uses input image_tag (default 'latest'). On push to main, IMAGE_TAG defaults to 'latest';
 #   for a specific commit use workflow_dispatch and pass e.g. sha-<7자리> to align with CI-pushed images.
 # run-name: Avoid showing commit message (e.g. Korean) in Actions list to prevent encoding garbling.
+# Trigger: push to main (paths-ignore: **.md, docs/**) or workflow_dispatch.
 name: CD
 run-name: CD - Deploy Oracle 1/2/3 (${{ github.event.inputs.image_tag || 'latest' }})
 on:
