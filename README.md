@@ -4,7 +4,7 @@
 
 - **역할**: 전체 서비스 배포·연결·환경 통제 (최상위 컨트롤 레이어)
 - **원칙**: 모든 서비스 이미지는 각 Repo에서 build → registry push. 본 저장소는 **이미지 tag만 참조**.
-- **현재 구성**: OCI 2노드 — **Oracle Osaka**(데이터 계층: TimescaleDB, Redis), **Oracle Korea**(애플리케이션 계층: Backend, prediction-service, data-collector). AWS는 선택 사항. IP·키·계정 등 민감정보는 저장소에 포함하지 않는다.
+- **현재 구성**: 토폴로지·노드 역할(무거운 워크로드=AWS API 계층, Oracle 2=엣지, Oracle 3=매크로)은 [05 §2](../investment-backend/docs/06-deployment/05-multi-vps-oracle-aws-cicd.md) 참조. 서버 메모리·스왑 정책은 [05 §3.0](../investment-backend/docs/06-deployment/05-multi-vps-oracle-aws-cicd.md) 참조. IP·키·계정 등 민감정보는 저장소에 포함하지 않는다.
 
 ## 구조
 
@@ -47,7 +47,7 @@ docker compose -f docker-compose.local.yml up -d --build
    - **Oracle 1 (데이터)**: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
    - **Oracle 2 / Oracle 3 (앱)**: `REGISTRY`, `BACKEND_TAG`, `PREDICTION_TAG`, `DATA_COLLECTOR_TAG`, `SPRING_DATASOURCE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `REDIS_HOST`, `REDIS_PORT`
    - **AWS (엣지)**: `REGISTRY`, `FRONTEND_TAG`
-3. **배포 전 점검**: `./scripts/check-node-ready.sh` — investment-infra 존재·Docker·.env 필수 변수 중 하나라도 설정되었는지 확인.
+3. **배포 전 점검**: `./scripts/check-node-ready.sh` — investment-infra 존재·Docker·.env 필수 변수 중 하나라도 설정되었는지 확인. 스왑(모든 노드)은 [05 §3.0](../investment-backend/docs/06-deployment/05-multi-vps-oracle-aws-cicd.md) 참조.
 
 상세 변수 설명·클론 방법은 [scripts/README.md](scripts/README.md) 참조.
 

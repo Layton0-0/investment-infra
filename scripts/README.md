@@ -4,7 +4,7 @@
 
 ## 멀티 VPS (Oracle Osaka + Oracle Korea + Oracle 3 Mumbai, 선택 시 AWS)
 
-노드별 전용 스크립트와 Compose 파일. Oracle 1 = 데이터 계층(Osaka), Oracle 2 = 앱 계층(Korea), Oracle 3 = 앱 계층(India West Mumbai).
+노드별 전용 스크립트와 Compose 파일. **토폴로지·역할(무거운 건 AWS, Oracle 2=엣지, Oracle 3=매크로)**은 [05 §2](../../investment-backend/docs/06-deployment/05-multi-vps-oracle-aws-cicd.md) 참조. **스왑(모든 노드)**은 [05 §3.0](../../investment-backend/docs/06-deployment/05-multi-vps-oracle-aws-cicd.md) 참조.
 
 | 스크립트 | 대상 노드(예) | Compose 파일 | 서비스 |
 |----------|---------------|--------------|--------|
@@ -14,6 +14,8 @@
 | `setup-oracle3-mumbai.sh` | Mumbai 최초 1회 | — | Docker·Compose 설치, investment-infra 경로·.env 안내 |
 | `check-node-ready.sh` | 모든 노드 | — | investment-infra 존재·Docker·.env 필수 변수 점검 (SSH MCP 또는 수동 실행) |
 | `deploy-aws.sh` | AWS (엣지, 선택) | `docker-compose.aws.yml` | frontend, nginx |
+| `create-instance-mumbai.sh` | Linux/WSL/원격 노드 | — | OCI ap-mumbai-1 인스턴스 생성용 curl 매크로 (VM.Standard.A1.Flex, Ubuntu). 실행 전 authorization·opc-request-id·x-date·x-content-sha256 등 세션 헤더를 브라우저 DevTools에서 갱신 필요. `chmod +x` 후 `./scripts/create-instance-mumbai.sh` 로 실행. |
+| `create-instance-mumbai.bat` | Windows CMD 로컬 | — | 위와 동일한 매크로의 Windows용 버전. |
 
 ### 노드에 investment-infra 클론 (최초 1회)
 
