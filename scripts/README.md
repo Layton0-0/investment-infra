@@ -9,11 +9,13 @@
 | 스크립트 | 대상 노드(예) | Compose 파일 | 서비스 |
 |----------|---------------|--------------|--------|
 | `deploy-oracle1.sh` | Oracle Osaka (데이터) | `docker-compose.oracle1.yml` | timescaledb, redis |
-| `deploy-oracle2.sh` | Oracle Korea (앱) | `docker-compose.oracle2.yml` | backend, prediction-service, data-collector |
-| `deploy-oracle3-mumbai.sh` | India West (Mumbai, Oracle 3) | `docker-compose.oracle2.yml` | backend, prediction-service, data-collector (동일) |
+| `deploy-oracle2-edge.sh` | Oracle Korea (엣지 전용) | `docker-compose.oracle2-edge.yml` | frontend, nginx(app, /api→AWS) |
+| `deploy-oracle3-mumbai.sh` | India West (Mumbai, Oracle 3) | — | 앱 스택 down·이미지 prune만. 매크로(Jenkins/cron 등)는 별도 관리 |
 | `setup-oracle3-mumbai.sh` | Mumbai 최초 1회 | — | Docker·Compose 설치, investment-infra 경로·.env 안내 |
 | `check-node-ready.sh` | 모든 노드 | — | investment-infra 존재·Docker·.env 필수 변수 점검 (SSH MCP 또는 수동 실행) |
-| `deploy-aws.sh` | AWS (엣지, 선택) | `docker-compose.aws.yml` | frontend, nginx |
+| `deploy-aws-api.sh` | AWS (API 계층, 선택) | `docker-compose.aws-api.yml` | backend, prediction-service, data-collector, nginx(api) |
+| `deploy-aws.sh` | AWS (엣지만 사용 시) | `docker-compose.aws.yml` | frontend, nginx |
+| `deploy-oracle2.sh` | (사용 중단) Oracle Korea 이전 앱 스택 | `docker-compose.oracle2.yml` | backend, prediction-service, data-collector — API는 AWS로 이전됨 |
 | `create-instance-mumbai.sh` | Linux/WSL/원격 노드 | — | OCI ap-mumbai-1 인스턴스 생성용 curl 매크로 (VM.Standard.A1.Flex, Ubuntu). 실행 전 authorization·opc-request-id·x-date·x-content-sha256 등 세션 헤더를 브라우저 DevTools에서 갱신 필요. `chmod +x` 후 `./scripts/create-instance-mumbai.sh` 로 실행. |
 | `create-instance-mumbai.bat` | Windows CMD 로컬 | — | 위와 동일한 매크로의 Windows용 버전. |
 
@@ -38,21 +40,25 @@ CD 및 로컬 배포 스크립트는 각 노드의 **`~/investment-infra`** (또
 
 - **템플릿 위치**: 저장소 루트 `investment-infra/.env.example`. 각 노드에서 `cp .env.example .env` 후 값만 채운다.
 - **Oracle 1**: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-- **Oracle 2 / Oracle 3**: `REGISTRY`, `BACKEND_TAG`, `PREDICTION_TAG`, `DATA_COLLECTOR_TAG`, `SPRING_DATASOURCE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `REDIS_HOST`, `REDIS_PORT`
-- **AWS**: `REGISTRY`, `FRONTEND_TAG`
+- **Oracle 2 (엣지)**: `REGISTRY`, `FRONTEND_TAG`
+- **Oracle 3 (Mumbai)**: 앱 스택 미배포 시 별도 필수 없음. (매크로용 .env는 선택)
+- **AWS (API)**: `REGISTRY`, `BACKEND_TAG`, `PREDICTION_TAG`, `DATA_COLLECTOR_TAG`, `SPRING_DATASOURCE_URL`, `POSTGRES_PASSWORD`, `REDIS_HOST`, `REDIS_PORT`
 
 ### 사용 방법
 
 1. **해당 노드에 investment-infra 클론** (위 참고) **또는 스크립트/yml만 복사**
-2. **환경 변수**: 위 노드별 필수 변수를 `.env`에 두거나 export 후 실행. Oracle 2/3는 `SPRING_DATASOURCE_URL`, `REDIS_HOST`에 Oracle 1 Public IP 기반 값 사용.
-3. **태그 설정 헬퍼**: `set-env-tags.sh` — 인자 또는 환경 변수로 태그를 받아 `.env`에 쓴다. CI에서 `GITHUB_SHA` 전달 후 원격 노드에 `.env` 복사하고 `deploy-*.sh` 실행 시 참조
+2. **환경 변수**: 위 노드별 필수 변수를 `.env`에 두거나 export 후 실행.
+3. **태그 설정 헬퍼**: `set-env-tags.sh` — 인자 또는 환경 변수로 태그를 받아 `.env`에 쓴다. CI에서 `GITHUB_SHA` 전달 후 원격 노드에 `.env` 복사하고 `deploy-*.sh` 실행 시 참조.
+4. **배포 전 정리**: 모든 deploy 스크립트는 실행 시 해당 compose **down** → **docker image prune -f** 후 pull·up 수행. (스왑 작업 전에도 동일 순서로 메모리 확보 권장.)
 
 ```bash
-# 예: Oracle 2에서 (백엔드 등 태그가 이미 .env에 있다고 가정)
-./scripts/deploy-oracle2.sh
+# 예: Oracle 2 엣지에서
+FRONTEND_TAG=abc1234 ./scripts/set-env-tags.sh
+./scripts/deploy-oracle2-edge.sh
 
-# 태그만 갱신 후 배포 (로컬에서 .env 생성 후 원격으로 복사해 실행)
+# 예: AWS API 스택
 BACKEND_TAG=abc1234 PREDICTION_TAG=abc1234 DATA_COLLECTOR_TAG=abc1234 ./scripts/set-env-tags.sh
+./scripts/deploy-aws-api.sh
 ```
 
 ### 단일 VPS

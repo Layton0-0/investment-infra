@@ -1,0 +1,29 @@
+# Oracle 2/3 엣지 전용: Frontend, nginx(app). /api 는 AWS api.neekly-report.cloud 로 프록시.
+# FRONTEND_TAG, REGISTRY 환경 변수. 배포 전 app.conf 내 app.EXAMPLE_DOMAIN → app.neekly-report.cloud, APP_DOMAIN 동일 치환.
+services:
+  frontend:
+    image: ${REGISTRY:-ghcr.io}/investment-frontend:${FRONTEND_TAG:-latest}
+    container_name: investment-frontend
+    restart: unless-stopped
+    networks:
+      - investment-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: investment-nginx-edge
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d.edge:/etc/nginx/conf.d:ro
+      - ./secrets/certs:/etc/nginx/certs:ro
+    depends_on:
+      - frontend
+    networks:
+      - investment-network
+
+networks:
+  investment-network:
+    driver: bridge

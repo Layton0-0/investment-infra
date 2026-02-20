@@ -1,0 +1,61 @@
+# AWS API 계층 전용: Backend, prediction-service, data-collector, nginx(api)
+# REGISTRY, BACKEND_TAG, PREDICTION_TAG, DATA_COLLECTOR_TAG, SPRING_DATASOURCE_URL, REDIS_HOST 등 .env 설정.
+# 배포 전: api.conf 내 api.EXAMPLE_DOMAIN → api.neekly-report.cloud, API_DOMAIN 동일 치환.
+# Certbot 발급 후 ./secrets/certs/live/api.neekly-report.cloud/ 마운트 또는 /etc/letsencrypt 마운트.
+services:
+  backend:
+    image: ${REGISTRY:-ghcr.io}/investment-backend:${BACKEND_TAG:-latest}
+    container_name: investment-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:?set SPRING_DATASOURCE_URL in .env}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-investment_pg}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST:?set REDIS_HOST in .env}
+      SPRING_DATA_REDIS_PORT: ${REDIS_PORT:-6379}
+    networks:
+      - investment-network
+    mem_limit: 512m
+
+  prediction-service:
+    image: ${REGISTRY:-ghcr.io}/investment-prediction-service:${PREDICTION_TAG:-latest}
+    container_name: investment-prediction-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - investment-network
+    mem_limit: 256m
+
+  data-collector:
+    image: ${REGISTRY:-ghcr.io}/investment-data-collector:${DATA_COLLECTOR_TAG:-latest}
+    container_name: investment-data-collector
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    networks:
+      - investment-network
+    mem_limit: 256m
+
+  nginx:
+    image: nginx:alpine
+    container_name: investment-nginx-api
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d.api:/etc/nginx/conf.d:ro
+      - ./secrets/certs:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+    networks:
+      - investment-network
+
+networks:
+  investment-network:
+    driver: bridge

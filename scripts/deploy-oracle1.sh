@@ -33,6 +33,10 @@ if ! docker compose version >/dev/null 2>&1; then
   exit 1
 fi
 
+echo "Stopping existing containers (down) and pruning unused images..."
+docker compose -f "${COMPOSE_FILE}" down --remove-orphans 2>/dev/null || true
+docker image prune -f
+
 echo "Pulling images (Oracle 1: timescaledb, redis)..."
 docker compose -f "${COMPOSE_FILE}" pull
 

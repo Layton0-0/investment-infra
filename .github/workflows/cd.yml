@@ -4,7 +4,7 @@
 #   Settings → Secrets and variables → Actions → Secrets
 # (SSH_PRIVATE_KEY_ORACLE_OSAKA, SSH_PRIVATE_KEY_ORACLE_KOREA, SSH_PRIVATE_KEY_ORACLE_MUMBAI, SSH_PRIVATE_KEY_AWS).
 # For private GHCR images: add secret GHCR_PULL_TOKEN (Classic PAT with read:packages). If login fails with "denied", fix the token or set package visibility to public (each repo → Packages → package → Package settings).
-# Set Variables (not the key content): DEPLOY_HOST_ORACLE_OSAKA, DEPLOY_HOST_ORACLE_KOREA, DEPLOY_HOST_ORACLE_MUMBAI, DEPLOY_USER, DEPLOY_HOST_AWS.
+# Set Variables: DEPLOY_HOST_ORACLE_OSAKA, DEPLOY_HOST_ORACLE_KOREA, DEPLOY_HOST_ORACLE_MUMBAI, DEPLOY_USER, DEPLOY_HOST_AWS. Optional: DEPLOY_USER_AWS (e.g. ec2-user for Amazon Linux).
 # Image tag policy: workflow_dispatch uses input image_tag (default 'latest'). On push to main, IMAGE_TAG defaults to 'latest';
 #   for a specific commit use workflow_dispatch and pass e.g. sha-<7자리> to align with CI-pushed images.
 # run-name: Avoid showing commit message (e.g. Korean) in Actions list to prevent encoding garbling.
@@ -50,7 +50,7 @@ jobs:
             chmod +x scripts/*.sh
             ./scripts/deploy-oracle1.sh
 
-      - name: Deploy Oracle 2 (Korea)
+      - name: Deploy Oracle 2 (Korea, Edge only)
         if: vars.DEPLOY_HOST_ORACLE_KOREA != ''
         env:
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
@@ -61,69 +61,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_KOREA }}
           envs: GHCR_PULL_TOKEN
           command_timeout: 15m
-          script: |
-            set -e
-            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
-            git fetch origin && git reset --hard origin/main
-            chmod +x scripts/*.sh
-            export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
-            export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
-            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
-              if echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin 2>/dev/null; then
-                echo "Logged in to ghcr.io"
-              else
-                echo "WARN: docker login to ghcr.io failed (token invalid or expired). Trying pull anyway (works if package visibility is public)."
-              fi
-            else
-              echo "GHCR_PULL_TOKEN not set: pulling without login (works if images are public)."
-            fi
-            export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
-            ./scripts/set-env-tags.sh
-            ./scripts/deploy-oracle2.sh
-
-      - name: Deploy Oracle 3 (Mumbai)
-        if: vars.DEPLOY_HOST_ORACLE_MUMBAI != ''
-        env:
-          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ vars.DEPLOY_HOST_ORACLE_MUMBAI }}
-          username: ${{ env.DEPLOY_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
-          envs: GHCR_PULL_TOKEN
-          command_timeout: 15m
-          timeout: 120s
-          script: |
-            set -e
-            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
-            git fetch origin && git reset --hard origin/main
-            chmod +x scripts/*.sh
-            export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
-            export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
-            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
-              if echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin 2>/dev/null; then
-                echo "Logged in to ghcr.io"
-              else
-                echo "WARN: docker login to ghcr.io failed (token invalid or expired). Trying pull anyway (works if package visibility is public)."
-              fi
-            else
-              echo "GHCR_PULL_TOKEN not set: pulling without login (works if images are public)."
-            fi
-            export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
-            ./scripts/set-env-tags.sh
-            ./scripts/deploy-oracle3-mumbai.sh
-
-      - name: Deploy AWS (optional)
-        if: vars.DEPLOY_HOST_AWS != ''
-        env:
-          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ vars.DEPLOY_HOST_AWS }}
-          username: ${{ env.DEPLOY_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY_AWS }}
-          envs: GHCR_PULL_TOKEN
-          command_timeout: 5m
           script: |
             set -e
             cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
@@ -142,35 +79,63 @@ jobs:
             fi
             export FRONTEND_TAG="${{ env.IMAGE_TAG }}"
             ./scripts/set-env-tags.sh
-            ./scripts/deploy-aws.sh
+            ./scripts/deploy-oracle2-edge.sh
 
-      - name: Verify Oracle 2 (Backend health)
-        if: vars.DEPLOY_HOST_ORACLE_KOREA != ''
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ vars.DEPLOY_HOST_ORACLE_KOREA }}
-          username: ${{ env.DEPLOY_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_KOREA }}
-          command_timeout: 5m
-          script: |
-            set -e
-            echo "Waiting for Backend to be ready (up to 240s)..."
-            for i in $(seq 1 24); do
-              if curl -sf http://localhost:8080/actuator/health; then echo "Backend healthy."; exit 0; fi
-              sleep 10
-            done
-            echo "Backend health check failed after 240s. On the node run: docker compose -f docker-compose.oracle2.yml ps; docker compose -f docker-compose.oracle2.yml logs backend --tail 50"
-            exit 1
-
-      - name: Verify Oracle 3 (Mumbai, Backend health)
+      - name: Deploy Oracle 3 (Mumbai, app stack cleanup only)
         if: vars.DEPLOY_HOST_ORACLE_MUMBAI != ''
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.DEPLOY_HOST_ORACLE_MUMBAI }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
-          command_timeout: 5m
+          command_timeout: 15m
           timeout: 120s
+          script: |
+            set -e
+            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
+            git fetch origin && git reset --hard origin/main
+            chmod +x scripts/*.sh
+            ./scripts/deploy-oracle3-mumbai.sh
+
+      - name: Deploy AWS (API stack, optional)
+        if: vars.DEPLOY_HOST_AWS != ''
+        env:
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEPLOY_HOST_AWS }}
+          username: ${{ vars.DEPLOY_USER_AWS || vars.DEPLOY_USER || 'ubuntu' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_AWS }}
+          envs: GHCR_PULL_TOKEN
+          command_timeout: 15m
+          script: |
+            set -e
+            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
+            git fetch origin && git reset --hard origin/main
+            chmod +x scripts/*.sh
+            export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+            export REGISTRY="ghcr.io/${REGISTRY_OWNER_LOWER}"
+            if [ -n "${GHCR_PULL_TOKEN:-}" ]; then
+              if echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "$REGISTRY_OWNER_LOWER" --password-stdin 2>/dev/null; then
+                echo "Logged in to ghcr.io"
+              else
+                echo "WARN: docker login to ghcr.io failed (token invalid or expired). Trying pull anyway (works if package visibility is public)."
+              fi
+            else
+              echo "GHCR_PULL_TOKEN not set: pulling without login (works if images are public)."
+            fi
+            export BACKEND_TAG="${{ env.IMAGE_TAG }}" PREDICTION_TAG="${{ env.IMAGE_TAG }}" DATA_COLLECTOR_TAG="${{ env.IMAGE_TAG }}"
+            ./scripts/set-env-tags.sh
+            ./scripts/deploy-aws-api.sh
+
+      - name: Verify AWS (Backend health)
+        if: vars.DEPLOY_HOST_AWS != ''
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.DEPLOY_HOST_AWS }}
+          username: ${{ vars.DEPLOY_USER_AWS || vars.DEPLOY_USER || 'ubuntu' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_AWS }}
+          command_timeout: 5m
           script: |
             set -e
             echo "Waiting for Backend to be ready (up to 240s)..."
@@ -178,5 +143,6 @@ jobs:
               if curl -sf http://localhost:8080/actuator/health; then echo "Backend healthy."; exit 0; fi
               sleep 10
             done
-            echo "Backend health check failed after 240s. On the node run: docker compose -f docker-compose.oracle2.yml ps; docker compose -f docker-compose.oracle2.yml logs backend --tail 50"
+            echo "Backend health check failed. On the node run: docker compose -f docker-compose.aws-api.yml ps; docker compose -f docker-compose.aws-api.yml logs backend --tail 50"
             exit 1
+
