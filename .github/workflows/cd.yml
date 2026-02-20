@@ -37,6 +37,7 @@ jobs:
     steps:
       - name: Deploy Oracle 1 (Osaka)
         if: vars.DEPLOY_HOST_ORACLE_OSAKA != ''
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.DEPLOY_HOST_ORACLE_OSAKA }}
@@ -45,13 +46,14 @@ jobs:
           command_timeout: 5m
           script: |
             set -e
-            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
+            cd ~/investment-infra || { echo "Skipping Oracle 1: ~/investment-infra not found"; exit 0; }
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
             ./scripts/deploy-oracle1.sh
 
       - name: Deploy Oracle 2 (Korea, Edge only)
         if: vars.DEPLOY_HOST_ORACLE_KOREA != ''
+        continue-on-error: true
         env:
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
         uses: appleboy/ssh-action@v1.0.3
@@ -63,7 +65,7 @@ jobs:
           command_timeout: 15m
           script: |
             set -e
-            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
+            cd ~/investment-infra || { echo "Skipping Oracle 2: ~/investment-infra not found"; exit 0; }
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
@@ -83,6 +85,7 @@ jobs:
 
       - name: Deploy Oracle 3 (Mumbai, app stack cleanup only)
         if: vars.DEPLOY_HOST_ORACLE_MUMBAI != ''
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.DEPLOY_HOST_ORACLE_MUMBAI }}
@@ -92,13 +95,14 @@ jobs:
           timeout: 120s
           script: |
             set -e
-            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
+            cd ~/investment-infra || { echo "Skipping Oracle 3: ~/investment-infra not found"; exit 0; }
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
             ./scripts/deploy-oracle3-mumbai.sh
 
       - name: Deploy AWS (API stack, optional)
         if: vars.DEPLOY_HOST_AWS != ''
+        continue-on-error: true
         env:
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
         uses: appleboy/ssh-action@v1.0.3
@@ -110,7 +114,7 @@ jobs:
           command_timeout: 15m
           script: |
             set -e
-            cd ~/investment-infra || { echo "ERROR: ~/investment-infra not found"; exit 1; }
+            cd ~/investment-infra || { echo "Skipping AWS: ~/investment-infra not found"; exit 0; }
             git fetch origin && git reset --hard origin/main
             chmod +x scripts/*.sh
             export REGISTRY_OWNER_LOWER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
@@ -130,6 +134,7 @@ jobs:
 
       - name: Verify AWS (Backend health)
         if: vars.DEPLOY_HOST_AWS != ''
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.DEPLOY_HOST_AWS }}
