@@ -3,7 +3,9 @@
 # - 80 포트를 쓰는 nginx를 잠시 중단 → certbot renew (standalone) → 인증서 복사 → nginx 재기동
 # 사용: cron에서 주기 실행 (예: 0 0,12 * * * root /home/ec2-user/investment-infra/scripts/renew-certs-aws.sh)
 # 실행: root 또는 sudo로 실행 (certbot, docker, cp 권한 필요)
+# cron 실행 시 PATH가 제한적이므로 명시적으로 설정
 set -euo pipefail
+export PATH="/usr/bin:/bin:/usr/local/bin:${PATH:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INFRA_DIR="${INFRA_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
