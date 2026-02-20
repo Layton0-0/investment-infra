@@ -10,6 +10,11 @@ APP_COMPOSE="${INFRA_DIR}/docker-compose.oracle2.yml"
 
 cd "${INFRA_DIR}"
 
+if ! command -v docker &>/dev/null; then
+  echo "Docker not installed on Mumbai; skipping app stack cleanup."
+  exit 0
+fi
+
 if [[ ! -f "${APP_COMPOSE}" ]]; then
   echo "No app compose at ${APP_COMPOSE}; nothing to down. Pruning images only."
 else
