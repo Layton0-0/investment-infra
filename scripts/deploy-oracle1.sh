@@ -16,12 +16,12 @@ if [[ ! -f "${COMPOSE_FILE}" ]]; then
 fi
 
 if [[ ! -f "${ENV_FILE}" ]]; then
-  echo "ERROR: .env not found. On Oracle 1 create .env with POSTGRES_PASSWORD, POSTGRES_USER, POSTGRES_DB." >&2
-  exit 1
+  echo "Skipping Oracle 1 deploy: .env not found. Create .env with POSTGRES_PASSWORD, POSTGRES_USER, POSTGRES_DB to deploy."
+  exit 0
 fi
 if ! grep -qE '^POSTGRES_PASSWORD=.+' "${ENV_FILE}"; then
-  echo "ERROR: POSTGRES_PASSWORD is missing or empty in .env. Set it before deploying Oracle 1." >&2
-  exit 1
+  echo "Skipping Oracle 1 deploy: POSTGRES_PASSWORD missing or empty in .env."
+  exit 0
 fi
 
 if ! command -v docker >/dev/null 2>&1; then
