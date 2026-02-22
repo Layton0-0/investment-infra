@@ -93,7 +93,6 @@ jobs:
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_ORACLE_MUMBAI }}
           command_timeout: 15m
-          timeout: 120s
           script: |
             set -e
             cd ~/investment-infra || { echo "Skipping Oracle 3: ~/investment-infra not found"; exit 0; }
