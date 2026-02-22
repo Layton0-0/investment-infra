@@ -19,6 +19,31 @@
 | `create-instance-mumbai.sh` | Linux/WSL/원격 노드 | — | OCI ap-mumbai-1 인스턴스 생성용 curl 매크로 (VM.Standard.A1.Flex, Ubuntu). 실행 전 authorization·opc-request-id·x-date·x-content-sha256 등 세션 헤더를 브라우저 DevTools에서 갱신 필요. `chmod +x` 후 `./scripts/create-instance-mumbai.sh` 로 실행. |
 | `create-instance-mumbai.bat` | Windows CMD 로컬 | — | 위와 동일한 매크로의 Windows용 버전. |
 
+### 로컬 풀 스택 (배포 3대와 동일 구성, Mumbai 제외)
+
+로컬에서 **Oracle 1(Osaka) + Oracle 2(Korea 엣지) + AWS(Seoul API)** 를 한 번에 띄우려면 아래 한 줄로 전체 기동 가능.
+
+| 스크립트 | 설명 |
+|----------|------|
+| `local-up.sh` | Linux/WSL/Git Bash: 풀 스택 기동 (백엔드 JAR 없으면 bootJar 후 `docker compose up -d --build`) |
+| `local-down.sh` | 풀 스택 중지 |
+| `local-up.ps1` | Windows PowerShell: 풀 스택 기동 |
+| `local-down.ps1` | Windows: 풀 스택 중지 |
+
+- **Compose 파일**: `docker-compose.local-full.yml` (데이터·API·엣지 통합, 단일 nginx로 `/api` → backend, `/` → frontend).
+- **실행 위치**: 프로젝트 루트(`auto-investment-project`) 또는 `investment-infra` 디렉터리.
+- **첫 실행 시**: `.env` 없으면 로컬용 기본값(POSTGRES_USER/PASSWORD/DB)으로 자동 생성. 백엔드 이미지 빌드 시 `build/libs/*.jar` 없으면 `bootJar` 자동 실행.
+
+```bash
+# Linux / WSL / Git Bash
+./scripts/local-up.sh
+
+# Windows PowerShell
+.\investment-infra\scripts\local-up.ps1
+```
+
+접속: **http://localhost** (프론트), **http://localhost/api** (백엔드 API).
+
 ### 노드에 investment-infra 클론 (최초 1회)
 
 CD 및 로컬 배포 스크립트는 각 노드의 **`~/investment-infra`** (또는 동일 구조 경로)를 전제로 한다. 최초 1회 클론이 필요하다.

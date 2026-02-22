@@ -1,6 +1,6 @@
 # CD: deploy to Oracle 1 (Osaka), Oracle 2 (Korea), Oracle 3 (Mumbai), and optionally AWS.
 # AWS: expects .env with SPRING_DATASOURCE_URL, POSTGRES_PASSWORD, REDIS_HOST on the node (not in repo).
-# Oracle 3 (Mumbai): Deploy and Verify failure fail the workflow (no continue-on-error).
+# All deploy steps use continue-on-error: true so one failure does not block others; fix and re-run as needed.
 # SECURITY: Do NOT commit SSH private keys to the repo. Register them only in:
 #   Settings → Secrets and variables → Actions → Secrets
 # (SSH_PRIVATE_KEY_ORACLE_OSAKA, SSH_PRIVATE_KEY_ORACLE_KOREA, SSH_PRIVATE_KEY_ORACLE_MUMBAI, SSH_PRIVATE_KEY_AWS).

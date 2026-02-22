@@ -1,0 +1,149 @@
+# 로컬 풀 스택: 배포 서버 3대(Osaka + Korea + AWS, Mumbai 제외)와 동일 구성
+# Oracle1(데이터) + Oracle2(엣지) + AWS(API) 를 한 Compose로 통합.
+# 단일 기동: ./scripts/local-up.sh 또는 docker compose -f docker-compose.local-full.yml up -d --build
+# backend: investment-backend/.env 전체를 env_file로 전달, environment로 Docker용 DB/Redis 주소만 override
+services:
+  # === Oracle 1 (Osaka) 역할: 데이터 계층 ===
+  timescaledb:
+    image: timescale/timescaledb:2.13.0-pg16
+    container_name: investment-timescaledb
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-local_pg}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_pg_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-investment_portfolio}
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./docker/timescaledb/init:/docker-entrypoint-initdb.d
+    networks:
+      - investment-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-local_pg} -d ${POSTGRES_DB:-investment_portfolio}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: investment-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - investment-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # === AWS (Seoul) 역할: API 계층 ===
+  backend:
+    build:
+      context: ../investment-backend
+      dockerfile: Dockerfile.local
+    image: investment-backend:local
+    pull_policy: never
+    container_name: investment-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - ../investment-backend/.env
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb:5432/${POSTGRES_DB:-investment_portfolio}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-local_pg}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-local_pg_pass}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      # POST /api/v1/news/collect 가 Python 수집기(data-collector)를 호출하도록 설정. 미설정 시 503 반환.
+      US_COLLECTOR_URL: "http://data-collector:8001"
+      # AI 예측 서비스(헬스/예측 API). 미설정 시 localhost:8000으로 실패하므로 Docker 호스트명 지정.
+      AI_PREDICTION_SERVICE_URL: "http://prediction-service:8000"
+      # data-collector가 POST /api/v1/internal/collected-news 호출 시 X-Internal-Data-Key 와 일치해야 함. data-collector와 동일 값.
+      DATA_COLLECTION_INTERNAL_KEY: ${DATA_COLLECTION_INTERNAL_KEY:-local-internal-key}
+    networks:
+      - investment-network
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  prediction-service:
+    build:
+      context: ../investment-prediction-service
+      dockerfile: Dockerfile
+    image: investment-prediction-service:local
+    pull_policy: never
+    container_name: investment-prediction-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - investment-network
+
+  data-collector:
+    build:
+      context: ../investment-data-collector
+      dockerfile: Dockerfile
+    image: investment-data-collector:local
+    pull_policy: never
+    container_name: investment-data-collector
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      # DART/SEC 수집 후 Spring 내부 API로 전송 시 필수. 미설정 시 503 "DATA_COLLECTION_INTERNAL_KEY not set"
+      DATA_COLLECTION_INTERNAL_KEY: ${DATA_COLLECTION_INTERNAL_KEY:-local-internal-key}
+      # 수집기가 Spring(backend) 호출 시 사용. Docker 내부 호스트명
+      SPRING_BASE_URL: "http://backend:8080"
+      # Open DART·SEC EDGAR API 키. 미설정 시 수집 건수 0. .env에 설정 후 주입. (Compose는 ${VAR:} 미지원 → ${VAR} 사용)
+      DART_API_KEY: ${DART_API_KEY}
+      SEC_API_KEY: ${SEC_API_KEY}
+    networks:
+      - investment-network
+
+  # === Oracle 2 (Korea) 역할: 엣지(프론트 + nginx) ===
+  frontend:
+    build:
+      context: ../investment-frontend
+      dockerfile: Dockerfile
+    image: investment-frontend:local
+    pull_policy: never
+    container_name: investment-frontend
+    restart: unless-stopped
+    networks:
+      - investment-network
+
+  # 로컬 단일 nginx: /api → backend:8080, / → frontend:80 (conf.d.local)
+  nginx:
+    image: nginx:alpine
+    container_name: investment-nginx-local
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d.local:/etc/nginx/conf.d:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - investment-network
+
+volumes:
+  timescaledb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  investment-network:
+    driver: bridge

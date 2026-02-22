@@ -1,5 +1,6 @@
 # AWS API 계층 전용: Backend, prediction-service, data-collector, nginx(api)
-# REGISTRY, BACKEND_TAG, PREDICTION_TAG, DATA_COLLECTOR_TAG, SPRING_DATASOURCE_URL, REDIS_HOST 등 .env 설정.
+# 배포 서버: SSH로 해당 서버에 .env 파일 생성 후 동일 디렉터리에서 compose up. env_file로 .env 전체가 backend에 전달됨.
+# REGISTRY, BACKEND_TAG, SPRING_DATASOURCE_URL, REDIS_HOST, SUPER_ADMIN_* 등 backend용 변수는 .env에 설정.
 # 배포 전: api.conf 내 api.EXAMPLE_DOMAIN → api.neekly-report.cloud, API_DOMAIN 동일 치환.
 # Certbot 발급 후 ./secrets/certs/live/api.neekly-report.cloud/ 마운트 또는 /etc/letsencrypt 마운트.
 services:
@@ -9,6 +10,8 @@ services:
     restart: unless-stopped
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:?set SPRING_DATASOURCE_URL in .env}
