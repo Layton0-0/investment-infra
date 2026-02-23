@@ -86,6 +86,10 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    env_file:
+      - ../investment-backend/.env
+    environment:
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
     networks:
       - investment-network
 
@@ -99,14 +103,14 @@ services:
     restart: unless-stopped
     ports:
       - "8001:8001"
+    env_file:
+      - ../investment-backend/.env
     environment:
-      # DART/SEC 수집 후 Spring 내부 API로 전송 시 필수. 미설정 시 503 "DATA_COLLECTION_INTERNAL_KEY not set"
-      DATA_COLLECTION_INTERNAL_KEY: ${DATA_COLLECTION_INTERNAL_KEY:-local-internal-key}
-      # 수집기가 Spring(backend) 호출 시 사용. Docker 내부 호스트명
+      # 수집기가 Spring 호출 시 사용. Docker 내부 호스트명 (env_file의 localhost 덮어씀)
       SPRING_BASE_URL: "http://backend:8080"
-      # Open DART·SEC EDGAR API 키. 미설정 시 수집 건수 0. .env에 설정 후 주입. (Compose는 ${VAR:} 미지원 → ${VAR} 사용)
-      DART_API_KEY: ${DART_API_KEY}
-      SEC_API_KEY: ${SEC_API_KEY}
+      # 인프라 .env로 덮어쓰기 가능. 미설정 시 env_file(backend .env) 값 사용
+      DATA_COLLECTION_INTERNAL_KEY: ${DATA_COLLECTION_INTERNAL_KEY:-local-internal-key}
+      # DART_API_KEY, SEC_API_KEY 등은 env_file(backend .env)에서 로드됨
     networks:
       - investment-network
 
