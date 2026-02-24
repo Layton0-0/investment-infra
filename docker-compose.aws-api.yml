@@ -13,6 +13,7 @@ services:
     env_file:
       - .env
     environment:
+      TZ: Asia/Seoul
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:?set SPRING_DATASOURCE_URL in .env}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-investment_pg}
@@ -29,6 +30,8 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    environment:
+      TZ: Asia/Seoul
     networks:
       - investment-network
     mem_limit: 256m
@@ -39,6 +42,8 @@ services:
     restart: unless-stopped
     ports:
       - "8001:8001"
+    environment:
+      TZ: Asia/Seoul
     networks:
       - investment-network
     mem_limit: 256m
@@ -46,6 +51,8 @@ services:
   nginx:
     image: nginx:alpine
     container_name: investment-nginx-api
+    environment:
+      TZ: Asia/Seoul
     restart: unless-stopped
     ports:
       - "80:80"

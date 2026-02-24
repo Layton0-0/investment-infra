@@ -1,25 +1,39 @@
 # 운영용. 이미지 tag만 참조. CI에서 빌드·푸시한 이미지 사용. REGISTRY는 ghcr.io/OWNER 형식.
+# 표준 시간: 모든 서비스 TZ=Asia/Seoul (compose 환경변수 또는 이미지 ENV로 설정)
 services:
   timescaledb:
     image: timescale/timescaledb:latest-pg16
+    environment:
+      TZ: Asia/Seoul
+      PGTZ: Asia/Seoul
     # (생략: 로컬과 동일 설정, 볼륨/네트워크만 프로덕션 규격)
 
   redis:
     image: redis:7-alpine
+    environment:
+      TZ: Asia/Seoul
     # (생략)
 
   backend:
     image: ${REGISTRY:-ghcr.io}/investment-backend:${BACKEND_TAG:-latest}
+    environment:
+      TZ: Asia/Seoul
     # 환경변수·포트·의존성 등
 
   prediction-service:
     image: ${REGISTRY:-ghcr.io}/investment-prediction-service:${PREDICTION_TAG:-latest}
+    environment:
+      TZ: Asia/Seoul
 
   data-collector:
     image: ${REGISTRY:-ghcr.io}/investment-data-collector:${DATA_COLLECTOR_TAG:-latest}
+    environment:
+      TZ: Asia/Seoul
 
   frontend:
     image: ${REGISTRY:-ghcr.io}/investment-frontend:${FRONTEND_TAG:-latest}
+    environment:
+      TZ: Asia/Seoul
 
 networks:
   investment-network:

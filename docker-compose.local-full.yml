@@ -9,6 +9,8 @@ services:
     container_name: investment-timescaledb
     restart: unless-stopped
     environment:
+      TZ: Asia/Seoul
+      PGTZ: Asia/Seoul
       POSTGRES_USER: ${POSTGRES_USER:-local_pg}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_pg_pass}
       POSTGRES_DB: ${POSTGRES_DB:-investment_portfolio}
@@ -50,12 +52,16 @@ services:
     image: investment-backend:local
     pull_policy: never
     container_name: investment-backend
-    restart: unless-stopped
+    # 실패 시에만 재시작, 횟수 제한은 entrypoint-retry.sh (기본 3회). 무제한 재시작 방지.
+    restart: on-failure
     ports:
       - "8080:8080"
     env_file:
       - ../investment-backend/.env
     environment:
+      TZ: Asia/Seoul
+      # 재시도 횟수(기본 3). 초과 시 컨테이너는 더 이상 재시작하지 않음.
+      RESTART_MAX_ATTEMPTS: "${RESTART_MAX_ATTEMPTS:-3}"
       SPRING_PROFILES_ACTIVE: local
       SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb:5432/${POSTGRES_DB:-investment_portfolio}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-local_pg}
@@ -89,6 +95,7 @@ services:
     env_file:
       - ../investment-backend/.env
     environment:
+      TZ: Asia/Seoul
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
     networks:
       - investment-network
@@ -106,6 +113,7 @@ services:
     env_file:
       - ../investment-backend/.env
     environment:
+      TZ: Asia/Seoul
       # 수집기가 Spring 호출 시 사용. Docker 내부 호스트명 (env_file의 localhost 덮어씀)
       SPRING_BASE_URL: "http://backend:8080"
       # 인프라 .env로 덮어쓰기 가능. 미설정 시 env_file(backend .env) 값 사용
@@ -123,6 +131,8 @@ services:
     pull_policy: never
     container_name: investment-frontend
     restart: unless-stopped
+    environment:
+      TZ: Asia/Seoul
     networks:
       - investment-network
 
@@ -131,6 +141,8 @@ services:
     image: nginx:alpine
     container_name: investment-nginx-local
     restart: unless-stopped
+    environment:
+      TZ: Asia/Seoul
     ports:
       - "80:80"
     volumes:
