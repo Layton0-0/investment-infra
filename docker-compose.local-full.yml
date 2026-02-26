@@ -2,6 +2,10 @@
 # Oracle1(데이터) + Oracle2(엣지) + AWS(API) 를 한 Compose로 통합.
 # 단일 기동: ./scripts/local-up.sh 또는 docker compose -f docker-compose.local-full.yml up -d --build
 # backend: investment-backend/.env 전체를 env_file로 전달, environment로 Docker용 DB/Redis 주소만 override
+#
+# 로그: 방법 A(json-file 로테이션) + 방법 B(backend는 호스트 볼륨에 영구 보관)
+# - backend: logging max-file 10, ./logs/backend:/LOG → Spring Boot 파일 로그 max-history 10, 호스트에 남음 (down 해도 유지)
+# - 그 외 서비스: logging json-file max-size 100m, max-file 5 (디스크 방지)
 services:
   # === Oracle 1 (Osaka) 역할: 데이터 계층 ===
   timescaledb:
@@ -26,6 +30,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
 
   redis:
     image: redis:7-alpine
@@ -43,6 +52,11 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
 
   # === AWS (Seoul) 역할: API 계층 ===
   backend:
@@ -56,6 +70,9 @@ services:
     restart: on-failure
     ports:
       - "8080:8080"
+    volumes:
+      # 방법 B: Spring Boot logging.file.name=/LOG/investment-choi.log → 호스트에 영구 보관 (down 해도 유지)
+      - ./logs/backend:/LOG
     env_file:
       - ../investment-backend/.env
     environment:
@@ -81,6 +98,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "900m"
+        max-file: "30"
 
   prediction-service:
     build:
@@ -99,6 +121,11 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
     networks:
       - investment-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
 
   data-collector:
     build:
@@ -121,6 +148,11 @@ services:
       # DART_API_KEY, SEC_API_KEY 등은 env_file(backend .env)에서 로드됨
     networks:
       - investment-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
 
   # === Oracle 2 (Korea) 역할: 엣지(프론트 + nginx) ===
   frontend:
@@ -135,6 +167,11 @@ services:
       TZ: Asia/Seoul
     networks:
       - investment-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
 
   # 로컬 단일 nginx: /api → backend:8080, / → frontend:80 (conf.d.local)
   nginx:
@@ -153,6 +190,11 @@ services:
       - frontend
     networks:
       - investment-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
 
 volumes:
   timescaledb_data:
