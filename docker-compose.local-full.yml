@@ -91,6 +91,11 @@ services:
       AI_PREDICTION_SERVICE_URL: "http://prediction-service:8000"
       # data-collector가 POST /api/v1/internal/collected-news 호출 시 X-Internal-Data-Key 와 일치해야 함. data-collector와 동일 값.
       DATA_COLLECTION_INTERNAL_KEY: ${DATA_COLLECTION_INTERNAL_KEY:-local-internal-key}
+      # 모의투자 실제 실행: dry-run 비활성화, 스케줄러/수동 트리거 시 실제 주문 실행(모의계좌만).
+      PIPELINE_AUTO_EXECUTE: "true"
+      PIPELINE_ALLOW_REAL_EXECUTION: "false"
+      # 스케줄러용 기본 자본(원). 계정별 최대투자금 미설정 시 사용. 0이면 해당 계정 실행 스킵.
+      PIPELINE_SCHEDULER_DEFAULT_CAPITAL: "${PIPELINE_SCHEDULER_DEFAULT_CAPITAL:-10000000}"
     networks:
       - investment-network
     depends_on:
@@ -139,6 +144,8 @@ services:
       - "8001:8001"
     env_file:
       - ../investment-backend/.env
+      # DART_API_KEY, SEC_API_KEY, KRX_AUTH_KEY 등 수집기 전용 키 (동일 키 있으면 아래 값 우선)
+      - ../investment-data-collector/.env
     environment:
       TZ: Asia/Seoul
       # 수집기가 Spring 호출 시 사용. Docker 내부 호스트명 (env_file의 localhost 덮어씀)
