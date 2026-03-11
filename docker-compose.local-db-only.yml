@@ -1,0 +1,117 @@
+# IntelliJ/Cursor 직접 구동 전용: DB + Redis + Python 서비스만 기동 (백엔드·프론트·nginx 제외)
+# 기동: docker compose -f docker-compose.local-db-only.yml up -d [--build]
+# 중지: docker compose -f docker-compose.local-db-only.yml down
+# 볼륨/네트워크 이름은 local-full과 동일해, 같은 디렉터리에서 쓰면 데이터 공유 가능
+# data-collector는 호스트 백엔드(8084) 호출용으로 SPRING_BASE_URL=http://host.docker.internal:8084 사용
+services:
+  timescaledb:
+    image: timescale/timescaledb:2.13.0-pg16
+    container_name: investment-timescaledb
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Seoul
+      PGTZ: Asia/Seoul
+      POSTGRES_USER: ${POSTGRES_USER:-local_pg}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_pg_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-investment_portfolio}
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./docker/timescaledb/init:/docker-entrypoint-initdb.d
+    networks:
+      - investment-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-local_pg} -d ${POSTGRES_DB:-investment_portfolio}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  redis:
+    image: redis:7-alpine
+    container_name: investment-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - investment-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  prediction-service:
+    build:
+      context: ../investment-prediction-service
+      dockerfile: Dockerfile
+    image: investment-prediction-service:local
+    pull_policy: never
+    container_name: investment-prediction-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../investment-backend/.env
+    environment:
+      TZ: Asia/Seoul
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    networks:
+      - investment-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  data-collector:
+    build:
+      context: ../investment-data-collector
+      dockerfile: Dockerfile
+    image: investment-data-collector:local
+    pull_policy: never
+    container_name: investment-data-collector
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    env_file:
+      - ../investment-backend/.env
+      - ../investment-data-collector/.env
+    environment:
+      TZ: Asia/Seoul
+      # 백엔드가 호스트에서 8084로 떠 있으므로 Docker에서 호스트 접근
+      SPRING_BASE_URL: "http://host.docker.internal:8084"
+      DATA_COLLECTION_INTERNAL_KEY: ${DATA_COLLECTION_INTERNAL_KEY:-local-internal-key}
+    extra_hosts:
+      # Linux에서 host.docker.internal 사용 (Windows/Mac Docker Desktop은 기본 제공)
+      - "host.docker.internal:host-gateway"
+    networks:
+      - investment-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+volumes:
+  timescaledb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  investment-network:
+    driver: bridge
