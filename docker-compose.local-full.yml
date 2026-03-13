@@ -96,6 +96,8 @@ services:
       PIPELINE_ALLOW_REAL_EXECUTION: "false"
       # 스케줄러용 기본 자본(원). 계정별 최대투자금 미설정 시 사용. 0이면 해당 계정 실행 스킵.
       PIPELINE_SCHEDULER_DEFAULT_CAPITAL: "${PIPELINE_SCHEDULER_DEFAULT_CAPITAL:-10000000}"
+      # JVM 옵션(선택). 미설정 시 기본 옵션으로 기동. 예: -Xmx512m -XX:+UseG1GC
+      BACKEND_OPTS: "${BACKEND_OPTS:-}"
     networks:
       - investment-network
     depends_on:
